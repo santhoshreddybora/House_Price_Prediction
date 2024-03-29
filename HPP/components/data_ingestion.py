@@ -55,12 +55,12 @@ class DataIngestion:
             logging.info(
                 "Exited split_data_as_train_test method of Data_Ingestion class")
             
-            dir_path=os.path.dirname(self.data_ingestion_config.training_file_path)
+            dir_path=os.path.dirname(self.data_ingestion_config.train_file_path)
             os.makedirs(dir_path,exist_ok=True)
             
             logging.info(f"exporting train and test files to path ")
             
-            train_set.to_csv(self.data_ingestion_config.training_file_path,index=False,header=True)
+            train_set.to_csv(self.data_ingestion_config.train_file_path,index=False,header=True)
             test_set.to_csv(self.data_ingestion_config.test_file_path,index=False,header=True)
             
             logging.info(f"Exported train and test file to path ")
@@ -82,7 +82,7 @@ class DataIngestion:
             logging.info("Got the data from Mongodb")
             self.split_data_as_train_test(dataframe)
             logging.info("Performed train test split on dataset")
-            data_ingestion_artifact=DataIngestionArtifact(train_file_path=self.data_ingestion_config.training_file_path,
+            data_ingestion_artifact=DataIngestionArtifact(train_file_path=self.data_ingestion_config.train_file_path,
                                                           test_file_path=self.data_ingestion_config.test_file_path)
             logging.info(f"Data Ingestion artifact:{data_ingestion_artifact}")
             return data_ingestion_artifact
