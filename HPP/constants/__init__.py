@@ -31,3 +31,16 @@ Data validation related constants
 DATA_VALIDATION_DIR_NAME:str="validation"
 DATA_VALIDATION_DRIFT_REPORT_DIR:str="drift_report"
 DATA_VALIDATION_REPORT_FILE_NAME:str="report.yaml"
+
+
+
+"""
+Data transformation related constants
+"""
+
+DATA_TRANSFORMATION_DIR_NAME:str="transformation"
+DATA_TRANSFORMATION_TRANSFORMED_DATA_DIR:str="transformed"
+DATA_TRANSFORMATION_OBJECT_DIR:str="transformed_object"
+PREPROCESSING_OBJECT_FILE_NAME="preprocessing.pkl"
+
+
