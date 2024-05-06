@@ -100,3 +100,39 @@ def drop_columns(df: pd.DataFrame, cols: list)-> pd.DataFrame:
         return df
     except Exception as e:
         raise CustomException(e, sys) from e
+    
+
+def convert_sqft_to_num(x)->float:
+    token=x.split('-')
+    if len(token)==2:
+        return (float(token[0])+float(token[1]))/2
+    try:
+        return float(x)
+    except:
+        return None
+
+
+def remove_pps_outliers(df4)->pd.DataFrame:
+    df_out=pd.DataFrame()
+    for key,subdf in df4.groupby('location'):
+        m=np.mean(subdf.price_per_sqft)
+        st=np.std(subdf.price_per_sqft)
+        reduced_df=subdf[(subdf['price_per_sqft']>(m-st)) & (subdf['price_per_sqft'] <=(m+st))]
+        df_out=pd.concat([df_out,reduced_df],ignore_index=True)
+    return df_out
+
+def remove_bhk_outliers(df)->pd.DataFrame:
+    exclude_indices = np.array([])
+    for location, location_df in df.groupby('location'):
+        bhk_stats = {}
+        for bhk, bhk_df in location_df.groupby('no_of_BHK'):
+            bhk_stats[bhk] = {
+                'mean': np.mean(bhk_df.price_per_sqft),
+                'std': np.std(bhk_df.price_per_sqft),
+                'count': bhk_df.shape[0]
+            }
+        for bhk,bhk_df in location_df.groupby("no_of_BHK"):
+            stats = bhk_stats.get(bhk-1)
+            if stats and stats['count']>5:
+                exclude_indices = np.append(exclude_indices, bhk_df[bhk_df.price_per_sqft < stats['mean']].index.values)
+    return df.drop(exclude_indices,axis='index')

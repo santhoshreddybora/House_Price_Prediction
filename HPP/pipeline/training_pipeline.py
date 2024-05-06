@@ -1,8 +1,11 @@
 import os,sys
 from HPP.components.data_ingestion import DataIngestion
 from HPP.components.data_validation import DataValidation
-from HPP.entity.config_entity import DataIngestionConfig,DataValidationConfig
-from HPP.entity.artifact_entity import DataIngestionArtifact, DataValidationArtifact,DataValidationArtifact
+from HPP.components.data_transformation import DataTransformation
+from HPP.entity.config_entity import (DataIngestionConfig,DataValidationConfig,
+                                      DataTransformationConfig)
+from HPP.entity.artifact_entity import (DataIngestionArtifact, DataValidationArtifact,
+                                        DataTransformationArtifact)
 from HPP.logger import logging
 from HPP.exception import CustomException
 
@@ -10,6 +13,7 @@ class TrainingPipeline:
     def __init__(self):
         self.data_ingestion_config=DataIngestionConfig()
         self.data_validation_config=DataValidationConfig()
+        self.data_transformation_config=DataTransformationConfig()
 
     def start_data_ingestion(self)->DataIngestionArtifact:
         """
@@ -29,13 +33,31 @@ class TrainingPipeline:
             raise CustomException(e,sys)
         
     
-    def start_data_validation(self)->DataValidationArtifact:
-        logging.info("Starting data validation method of TrainingPipeline class")
-        data_validation=DataValidation(self.data_ingestion_config,self.data_validation_config)
-        data_validation_artifact=data_validation.initiate_data_validation()
-        logging.info(f"Performed the data validation operation")
-        logging.info(f"Exited start_data_validation method of TrainPipeline class")
-        return data_validation_artifact
+    def start_data_validation(self,data_ingestion_artifact:DataIngestionArtifact)->DataValidationArtifact:
+        try:
+            logging.info("Starting data validation method of TrainingPipeline class")
+            data_validation=DataValidation(self.data_ingestion_config,self.data_validation_config)
+            data_validation_artifact=data_validation.initiate_data_validation()
+            logging.info(f"Performed the data validation operation")
+            logging.info(f"Exited start_data_validation method of TrainPipeline class")
+            return data_validation_artifact
+        except Exception as e:
+            logging.info(e)
+            raise CustomException(e,sys)
+
+    def start_data_transformation(self,data_ingestion_artifact:DataIngestionArtifact,
+                                  data_validation_artifact:DataValidationArtifact)->DataTransformationArtifact:
+        try:
+            logging.info("Starting data transformation method of TrainingPipeline class")
+            data_transformation=DataTransformation(data_ingestion_artifact=data_ingestion_artifact
+                                                ,data_validation_artifact=data_validation_artifact,
+                                                data_transformation_config=self.data_transformation_config)
+            data_transformation_artifact=data_transformation.initiate_data_transformation()
+            return data_transformation_artifact
+        except Exception as e:
+            logging.info(e)
+            raise CustomException(e,sys)
+
     
     
     def run_pipeline(self):
@@ -45,7 +67,8 @@ class TrainingPipeline:
         try:
             logging.info("Entered the run_pipeline method of TrainPipeline class")
             data_ingestion_artifact=self.start_data_ingestion()
-            data_validation_artifact=self.start_data_validation()
+            data_validation_artifact=self.start_data_validation(data_ingestion_artifact)
+            data_transformation_artifact=self.start_data_transformation(data_ingestion_artifact,data_validation_artifact)
             logging.info("Exited the run_pipeline method of TrainPipeline class")
         except Exception as e:
             logging.info(e)
