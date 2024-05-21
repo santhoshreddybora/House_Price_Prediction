@@ -31,3 +31,12 @@ class RegressionMetricArtifact:
 class ModelTrainerArtifact:
     trained_model_file_path:str 
     metric_artifact:RegressionMetricArtifact
+
+
+@dataclass
+class ModelEvaluationArtifact:
+    is_model_accepted:bool
+    changes_accuracy:float
+    s3_model_key_path:str
+    trained_model_path:str
+

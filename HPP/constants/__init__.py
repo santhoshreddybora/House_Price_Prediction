@@ -54,3 +54,23 @@ MODEL_TRAINER_TRAINED_MODEL_NAME:str="model.pkl"
 MODEL_TRAINER_EXPECTED_SCORE:float=0.6
 MODEL_TRAINER_MODEL_CONFIG_FILE_PATH:str=os.path.join("config","model.yaml")
 MODEL_FILE_NAME="model.pkl"
+
+'''
+Model Evaluation related constants
+'''
+MODEL_EVALUATION_CHNAGED_THRESHOLD_SCORE:float=0.02
+MODEL_BUCKET_NAME="hpp-model"
+MODEL_PUSHER_S3_KEY="model-registry"
+
+
+
+"""
+AWS KEYS and REGION 
+"""
+AWS_ACCESS_KEY="AWS_ACCESS_KEY"
+AWS_SECRET_KEY="AWS_SECRET_KEY"
+REGION_NAME="us-east-1"
+
+
+APP_HOST="0.0.0.0"
+APP_PORT=8080
