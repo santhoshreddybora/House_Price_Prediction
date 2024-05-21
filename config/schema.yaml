@@ -32,7 +32,8 @@ drop_columns:
 # for data transformation
 num_features:
   - bath
-  - price
+  - no_of_BHK
+  - total_sqft
 
 
 oh_columns:

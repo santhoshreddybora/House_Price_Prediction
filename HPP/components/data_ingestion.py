@@ -83,7 +83,8 @@ class DataIngestion:
             self.split_data_as_train_test(dataframe)
             logging.info("Performed train test split on dataset")
             data_ingestion_artifact=DataIngestionArtifact(train_file_path=self.data_ingestion_config.train_file_path,
-                                                          test_file_path=self.data_ingestion_config.test_file_path)
+                                                          test_file_path=self.data_ingestion_config.test_file_path,
+                                                          feature_store_path=self.data_ingestion_config.feature_store_path)
             logging.info(f"Data Ingestion artifact:{data_ingestion_artifact}")
             return data_ingestion_artifact
         except Exception as e:

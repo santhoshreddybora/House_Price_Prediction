@@ -7,7 +7,7 @@ grid_search:
 model_selection:
   module_0:
     class: CatBoostRegressor
-    module: sklearn.catboost
+    module: catboost
     params:
       iterations: 100
       learning_rate: 0.1
@@ -32,7 +32,7 @@ model_selection:
       
   module_1:
     class: XGBRegressor
-    module: sklearn.xgboost
+    module: xgboost
     params:
       learning_rate: 0.1
       max_depth: 4
