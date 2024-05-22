@@ -36,7 +36,7 @@ class ModelTrainerArtifact:
 @dataclass
 class ModelEvaluationArtifact:
     is_model_accepted:bool
-    changes_accuracy:float
-    s3_model_key_path:str
+    changed_accuracy:float
+    s3_model_path:str
     trained_model_path:str
 

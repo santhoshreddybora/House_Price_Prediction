@@ -15,7 +15,7 @@ from HPP.utils.main_utils import (save_object, save_numpy_array_data, read_yaml,
                                    drop_columns,convert_sqft_to_num,remove_pps_outliers,
                                    remove_bhk_outliers)
 from HPP.constants import SCHEMA_FILE_PATH,TARGET_COLUMN
-
+from pathlib import Path
 
 
 ##This class is responsible for fit and transform the data into desired format we can add any conditions here
@@ -138,7 +138,13 @@ class DataTransformation:
                 X=drop_columns(transformed_df,cols=['price'])
                 y=transformed_df['price']
 
-                X_train,X_test,y_train,y_test=train_test_split(X,y,test_size=0.2)
+                X_train,X_test,y_train,y_test=train_test_split(X,y,test_size=0.2,random_state=42)
+                df_X_train = pd.DataFrame(X_train, columns=X.columns)
+                df_X_test = pd.DataFrame(X_test, columns=X.columns)
+                df_y_train = pd.DataFrame(y_train, columns=['price'])
+                df_y_test = pd.DataFrame(y_test, columns=['price'])
+                test_df=pd.concat([df_X_test,df_y_test],axis=1)
+                test_df.to_csv(Path(r'D:\MachineLearning\HousePrice\HPP\test.csv'))
                 train_arr=np.concatenate([np.array(X_train),np.array(y_train).reshape(-1,1)],axis=1)
                 test_arr=np.concatenate([np.array(X_test),np.array(y_test).reshape(-1,1)],axis=1)   
                 print(train_arr.shape)
@@ -151,10 +157,9 @@ class DataTransformation:
                 logging.info(
                     "Exited initiate_data_transformation method of Data_Transformation class"
                 )
-                data_transformation_artifact=DataTransformationArtifact(transformed_object_file_path=
-                                                                        self.data_transformation_config.transformed_object_file_path,
+                data_transformation_artifact=DataTransformationArtifact(transformed_object_file_path=self.data_transformation_config.transformed_object_file_path,
                                                                         transformed_train_file_path=self.data_transformation_config.transformed_train_file_path,
-                                                                        transformed_test_file_path=self.data_transformation_config.transformed_test_file_path)
+                                                                        transformed_test_file_path=self.data_transformation_config.transformed_test_file_path) 
                 return data_transformation_artifact
             else:
                 logging.info(self.data_validation_artifact.message)
