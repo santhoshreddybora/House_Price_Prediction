@@ -7,6 +7,8 @@ __pycache__/
 *.so
 artifact/
 logs/
+catboost_info/
+
 # Distribution / packaging
 .Python
 build/

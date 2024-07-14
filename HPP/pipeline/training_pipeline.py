@@ -122,9 +122,13 @@ class TrainingPipeline:
             data_transformation_artifact=self.start_data_transformation(data_ingestion_artifact,data_validation_artifact)
             model_trainer_artifact=self.model_trainer(data_transformation_artifact)
             model_evaluation_artifact=self.start_model_evaluation(data_ingestion_artifact,model_trainer_artifact,data_transformation_artifact)
+            if not model_evaluation_artifact.is_model_accepted:
+                logging.info(f"Model is not accepted")
+                raise CustomException(e,sys)
             model_pusher_artifact=self.start_model_pusher(model_evaluation_artifact)
             logging.info("Exited the run_pipeline method of TrainPipeline class")
         except Exception as e:
             logging.info(e)
             raise CustomException(e,sys)
     
+6

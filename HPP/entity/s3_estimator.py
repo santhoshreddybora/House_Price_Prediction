@@ -16,7 +16,7 @@ class HPPEstimator:
         self.bucket_name = bucket_name
         self.s3 = SimpleStorageService()
         self.model_path = model_path
-        self.loaded_model:HPPEstimator=None
+        self.loaded_model:HPPModel=None
     
     def is_model_present(self,model_path):
         try:

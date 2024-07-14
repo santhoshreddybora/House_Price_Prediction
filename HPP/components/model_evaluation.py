@@ -11,6 +11,11 @@ from HPP.entity.s3_estimator import HPPEstimator
 from dataclasses import dataclass
 from HPP.entity.estimator import HPPModel
 from pathlib import Path
+from HPP.constants import SCHEMA_FILE_PATH,TARGET_COLUMN
+from HPP.utils.main_utils import (save_object, save_numpy_array_data, read_yaml,
+                                   drop_columns,convert_sqft_to_num,remove_pps_outliers,
+                                   remove_bhk_outliers)
+
 @dataclass
 class EvaluateModelResponse:
     trained_model_r2_score:float
@@ -26,6 +31,7 @@ class ModelEvaluation:
             self.data_ingestion_artifact=data_ingestion_artifact
             self.data_transformation_artifact=data_transformation_artifact
             self.model_trainer_artifact=model_trainer_artifact
+            self._schema_config =read_yaml(filepath=SCHEMA_FILE_PATH)
         except Exception as e:
             CustomException(e,sys)
     
@@ -59,7 +65,25 @@ class ModelEvaluation:
         On Failure  :   Write an exception log and then raise an exception
         """
         try:
-            test_df = pd.read_csv(Path(r'D:\MachineLearning\HousePrice\HPP\test.csv'))
+            test_df = pd.read_csv(self.data_ingestion_artifact.test_file_path)
+                        
+
+            drop_cols = self._schema_config['drop_columns']
+            print(drop_cols)
+            df1=drop_columns(df=test_df,cols=drop_cols)
+            df1=df1.dropna()
+            df1['no_of_BHK']=df1['size'].apply(lambda x: int(x.split(' ')[0]) if pd.notna(x) else None)
+            df1['total_sqft']=df1['total_sqft'].apply(convert_sqft_to_num)
+            df1['price_per_sqft']=df1['price']*100000/(df1['total_sqft'])
+            location_count=df1['location'].value_counts()
+            location_less_than_10=location_count[location_count<=10]
+            df1['location']=df1['location'].apply(lambda x:"other" if x in location_less_than_10 else x)
+            df2=df1[~(df1['total_sqft']/df1['no_of_BHK']<300)]
+            df3=remove_pps_outliers(df2)
+            df4=remove_bhk_outliers(df3)
+            df5=df4[df4.bath<df4.no_of_BHK+2]
+            df6=drop_columns(df=df5,cols=['size','price_per_sqft'])
+            test_df=df6
             x, y = test_df.drop(TARGET_COLUMN, axis=1), test_df[TARGET_COLUMN]
 
             # trained_model = load_object(file_path=self.model_trainer_artifact.trained_model_file_path)

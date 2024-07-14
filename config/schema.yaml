@@ -1,5 +1,5 @@
 columns:
-  - area_type: category
+  - area_type : category
   - availability: category
   - location: category
   - size: category
@@ -31,10 +31,9 @@ drop_columns:
 
 # for data transformation
 num_features:
+  - total_sqft
   - bath
   - no_of_BHK
-  - total_sqft
-
 
 oh_columns:
   - location

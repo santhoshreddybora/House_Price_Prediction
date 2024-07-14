@@ -1,6 +1,6 @@
 import os
 from HPP.entity.artifact_entity import DataIngestionArtifact, DataTransformationArtifact,DataValidationArtifact
-from HPP.entity.config_entity import DataTransformationConfig
+from HPP.entity.config_entity import DataTransformationConfig,DataIngestionConfig
 from HPP.exception import CustomException
 from HPP.logger import logging
 from sklearn.base import BaseEstimator, TransformerMixin
@@ -8,7 +8,7 @@ import sys
 import numpy as np
 import pandas as pd
 from sklearn.pipeline import Pipeline
-from sklearn.preprocessing import OneHotEncoder,StandardScaler
+from sklearn.preprocessing import OneHotEncoder,StandardScaler,OrdinalEncoder
 from sklearn.compose import ColumnTransformer
 from sklearn.model_selection import train_test_split
 from HPP.utils.main_utils import (save_object, save_numpy_array_data, read_yaml,
@@ -16,50 +16,6 @@ from HPP.utils.main_utils import (save_object, save_numpy_array_data, read_yaml,
                                    remove_bhk_outliers)
 from HPP.constants import SCHEMA_FILE_PATH,TARGET_COLUMN
 from pathlib import Path
-
-
-##This class is responsible for fit and transform the data into desired format we can add any conditions here
-class FeatureEngineer(BaseEstimator, TransformerMixin):
-    def __init__(self):
-        pass
-    
-    def fit(self, X, y=None):
-        return self
-    
-    def transform(self, X):
-        try:
-            def internal(df):
-                # Your feature engineering steps here
-                drop_cols = ['area_type','availability','society','balcony']
-                df1=drop_columns(df,cols=drop_cols)
-                df1=df1.dropna()
-                df1['no_of_BHK']=df1['size'].apply(lambda x: int(x.split(' ')[0]) if pd.notna(x) else None)
-                df1['total_sqft']=df1['total_sqft'].apply(convert_sqft_to_num)
-                df1['price_per_sqft']=df1['price']*100000/(df1['total_sqft'])
-                location_count=df1['location'].value_counts()
-                location_less_than_10=location_count[location_count<=10]
-                df1['location']=df1['location'].apply(lambda x:"other" if x in location_less_than_10 else x)
-                df2=df1[~(df1['total_sqft']/df1['no_of_BHK']<300)]
-                df3=remove_pps_outliers(df2)
-                df4=remove_bhk_outliers(df3)
-                df5=df4[df4.bath<df4.no_of_BHK+2]
-                df6=df5.drop(['size','price_per_sqft'],axis=1)
-                if df6.isna().sum().sum() > 0:
-                    raise ValueError("NaN values detected before encoding")
-                # encoder = OneHotEncoder(sparse_output=False)
-                X_encoded = pd.get_dummies(df6.location,dtype='int')  # Assuming 'location' is the column to be encoded
-                # Convert encoded features to DataFrame
-                # df_encoded = pd.DataFrame(X_encoded, columns=encoder.get_feature_names_out(['location']))               # Concatenate encoded features with other features
-                df_final = pd.concat([df6.drop(columns=['location']), X_encoded.drop(['other'],axis=1)], axis=1)
-                return df_final
-            preprocessed_data = internal(X)
-            return preprocessed_data
-        except Exception as e:
-            raise CustomException(e, sys) from e
-
-
-
-
 
 
 
@@ -95,23 +51,20 @@ class DataTransformation:
             "Entered get_data_transformer_object method of DataTransformation class"
         )
         try:
-            feature_engineer = FeatureEngineer()
-
-            # preprocessor = ColumnTransformer(
-            # transformers=[
-            #         ('passthrough', 'passthrough', ['no_of_BHK'])  # Add your encoded columns here
-            #         ],remainder='passthrough'  # Keep the remaining columns unchanged
-            #         )
-
-            # Combine FeatureEngineer and preprocessor into a Pipeline
-            pipeline = Pipeline([
-            ('feature_engineer', feature_engineer)
-            # ('preprocessor', preprocessor)
-                ])
+            oh_transformer = OneHotEncoder(handle_unknown='ignore')
+            st_transformer = StandardScaler()
+            oh_columns=self._schema_config['oh_columns']
+            num_columns=self._schema_config['num_features']
+            
+            preprocessor=ColumnTransformer([
+                ('OnehotEncoder',oh_transformer,oh_columns),
+                ('StandardScaler',st_transformer,num_columns)
+               ])
+            
 
             logging.info(f"Created Preprocessor object from columntransformer")
 
-            return pipeline
+            return preprocessor
         except Exception as e:
             raise CustomException(e,sys)
         
@@ -129,26 +82,74 @@ class DataTransformation:
                 logging.info(f"Starting data transformation")
                 preprocessor=self.get_data_transformer_object()
                 logging.info(f"Got preprocessor object")
-                Hpp_df=DataTransformation.read_data(self.data_ingestion_artifact.feature_store_path)
+                # train_df=DataTransformation.read_data(self.data_ingestion_artifact.train_file_path)
                 # test_df=DataTransformation.read_data(self.data_ingestion_artifact.test_file_path)
-
-                transformed_df=preprocessor.fit_transform(Hpp_df)
+                Total_df=DataTransformation.read_data(self.data_ingestion_artifact.feature_store_path)
+                print(Total_df.columns)
+                # df=DataTransformation.read_data(self.data_ingestion_artifact.feature_store_path)
+                drop_cols = self._schema_config['drop_columns']
+                print(drop_cols)
+                df1=drop_columns(df=Total_df,cols=drop_cols)
+                df1=df1.dropna()
+                df1['no_of_BHK']=df1['size'].apply(lambda x: int(x.split(' ')[0]) if pd.notna(x) else None)
+                df1['total_sqft']=df1['total_sqft'].apply(convert_sqft_to_num)
+                df1['price_per_sqft']=df1['price']*100000/(df1['total_sqft'])
+                location_count=df1['location'].value_counts()
+                location_less_than_10=location_count[location_count<=10]
+                df1['location']=df1['location'].apply(lambda x:"other" if x in location_less_than_10 else x)
+                df2=df1[~(df1['total_sqft']/df1['no_of_BHK']<300)]
+                df3=remove_pps_outliers(df2)
+                df4=remove_bhk_outliers(df3)
+                df5=df4[df4.bath<df4.no_of_BHK+2]
+                df6=drop_columns(df=df5,cols=['size','price_per_sqft'])
+                print(df6)
+                train_set,test_set=train_test_split(df6,test_size=DataIngestionConfig.train_test_split_ratio)
+                # if df6.isna().sum().sum() > 0:
+                #     raise ValueError("NaN values detected before encoding")
+                logging.info(train_set)
+                logging.info(test_set)
                 logging.info("drop the columns in drop_cols of Train dataset")
-                print(transformed_df)
-                X=drop_columns(transformed_df,cols=['price'])
-                y=transformed_df['price']
+                input_feature_train_df=drop_columns(df=train_set,cols=['price'])
+                output_feature_train_df=train_set['price']
+                # test_df=DataTransformation.read_data(self.data_ingestion_artifact.test_file_path)
+                transformed_train_array=preprocessor.fit_transform(input_feature_train_df)
+                print(transformed_train_array.toarray())
+                logging.info("drop the columns in drop_cols of Test dataset")
+                input_feature_test_df=drop_columns(df=test_set,cols=['price'])
+                output_feature_test_df=test_set['price']
+                transformed_test_array=preprocessor.transform(input_feature_test_df)
+                
+                
+                transformed_train_array_dense = transformed_train_array.toarray()
+                transformed_test_array_dense = transformed_test_array.toarray()
 
-                X_train,X_test,y_train,y_test=train_test_split(X,y,test_size=0.2,random_state=42)
-                df_X_train = pd.DataFrame(X_train, columns=X.columns)
-                df_X_test = pd.DataFrame(X_test, columns=X.columns)
-                df_y_train = pd.DataFrame(y_train, columns=['price'])
-                df_y_test = pd.DataFrame(y_test, columns=['price'])
-                test_df=pd.concat([df_X_test,df_y_test],axis=1)
-                test_df.to_csv(Path(r'D:\MachineLearning\HousePrice\HPP\test.csv'))
-                train_arr=np.concatenate([np.array(X_train),np.array(y_train).reshape(-1,1)],axis=1)
-                test_arr=np.concatenate([np.array(X_test),np.array(y_test).reshape(-1,1)],axis=1)   
-                print(train_arr.shape)
-                print(test_arr.shape)         
+                # Reshape the target arrays if needed
+                output_feature_train_df = np.array(output_feature_train_df).reshape(-1, 1)
+                output_feature_test_df = np.array(output_feature_test_df).reshape(-1, 1)
+
+                print("Reshaped output feature train array shape:", output_feature_train_df.shape)
+                print("Reshaped output feature test array shape:", output_feature_test_df.shape)
+
+                print("Transformed train array (dense) shape:", transformed_train_array_dense.shape)
+                print("Output feature train array shape:", output_feature_train_df.shape)
+
+                print("Transformed test array (dense) shape:", transformed_test_array_dense.shape)
+                print("Output feature test array shape:", output_feature_test_df.shape)
+
+                # Check dimensions before concatenation
+                assert transformed_train_array_dense.shape[0] == output_feature_train_df.shape[0], "Mismatch in number of rows between transformed train array and output feature train array"
+                assert transformed_test_array_dense.shape[0] == output_feature_test_df.shape[0], "Mismatch in number of rows between transformed test array and output feature test array"
+
+                # Concatenate transformed arrays with target arrays
+                train_arr = np.c_[transformed_train_array_dense, output_feature_train_df]
+                test_arr = np.c_[transformed_test_array_dense, output_feature_test_df]
+
+                print("Train array shape after concatenation:", train_arr.shape)
+                print("Test array shape after concatenation:", test_arr.shape)
+
+  
+                # print(train_arr.shape)
+                # print(test_arr.shape)         
                 save_object(self.data_transformation_config.transformed_object_file_path, preprocessor)
                 save_numpy_array_data(self.data_transformation_config.transformed_train_file_path, array=train_arr)
                 save_numpy_array_data(self.data_transformation_config.transformed_test_file_path, array=test_arr)

@@ -24,6 +24,7 @@ class HPPModel:
         try:
             logging.info("Using the trained model to get predictions")
             transformed_feature=self.preprocessing_object.transform(dataframe)
+            print(transformed_feature.toarray())
             logging.info("Used the trained model to get predictions")
             return self.trained_model_object.predict(transformed_feature)
         except Exception as e:
