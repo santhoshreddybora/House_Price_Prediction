@@ -85,7 +85,7 @@ async def predictRouteClient(request: Request):
 
 
         value = model_predictor.predict(dataframe=hpp_df)[0]
-        value=round(value,2)
+        value = round(float(value),2)
         status = None
         if value != 0:
             status = f"House price for above features is {value}Lakhs INR"

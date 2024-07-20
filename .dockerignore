@@ -3,9 +3,12 @@ venv
 env
 .gitignore
 logs
+catboost_info
 template.py
 demo.py
 README.md
 LICENSE
 us_visa.egg.info
 notebook
+Houseimage.jpg
+test_df.csv
