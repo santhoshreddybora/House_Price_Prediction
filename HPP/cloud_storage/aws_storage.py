@@ -122,7 +122,7 @@ class SimpleStorageService:
             )
             model_file = func()
             file_object = self.get_file_object(model_file, bucket_name)
-            model_obj = self.read_object(file_object, decode=False)
+            model_obj = self.read_object(file_object, decode=True)
             model = pickle.loads(model_obj)
             logging.info("Exited the load_model method of S3Operations class")
             return model
