@@ -75,11 +75,14 @@ sudo sh get-docker.sh
 sudo usermod -aG docker ubuntu
 
 newgrp docker
+![alt text](image.png)
+
 ```
 6. Configure EC2 as a self hosted runner on git hub:
 ```
 setting>actions>runner>new self hosted runner> choose os> then run command one by one
 ```
+![alt text](selfhosted.png)
 7. Git hib secrets
 ```
 * AWS_ACCESS_KEY
@@ -87,3 +90,9 @@ setting>actions>runner>new self hosted runner> choose os> then run command one b
 * AWS_DEFAULT_REGION 
 * ECR_REPO - ECR repo name 
 ```` 
+![alt text](Secret.png)
+
+
+
+## Demo Page for UI
+![alt text](image-1.png)
